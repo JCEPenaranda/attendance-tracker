@@ -381,6 +381,9 @@ let events = [
 ];
 
 // ------------------ Groups ------------------
+app.get("/", (req, res) => {
+  res.send("✅ Backend API is running. Try /groups or /events");
+});
 
 // Get all groups
 app.get("/groups", (req, res) => res.json(groups));
