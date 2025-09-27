@@ -129,60 +129,60 @@ async function reset() {
     console.log("🌱 Seeding groups and members...");
     const groupIdMap = new Map();
 
-    // for (const g of GROUPS) {
-    //   const res = await client.query(
-    //     `INSERT INTO groups (name, code) VALUES ($1, $2) RETURNING id`,
-    //     [g.name, g.code]
-    //   );
-    //   const newGroupId = res.rows[0].id;
-    //   groupIdMap.set(g.id, newGroupId);
+    for (const g of GROUPS) {
+      const res = await client.query(
+        `INSERT INTO groups (name, code) VALUES ($1, $2) RETURNING id`,
+        [g.name, g.code]
+      );
+      const newGroupId = res.rows[0].id;
+      groupIdMap.set(g.id, newGroupId);
 
-    //   for (const m of g.members) {
-    //     await client.query(
-    //       `INSERT INTO members (group_id, full_name, nickname, contact, address, invited_by, notes, one2one)
-    //        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    //       [
-    //         newGroupId,
-    //         m.fullName,
-    //         m.nickname,
-    //         m.contact,
-    //         m.address,
-    //         m.invitedBy,
-    //         m.notes,
-    //         m.one2one,
-    //       ]
-    //     );
-    //   }
-    // }
+      for (const m of g.members) {
+        await client.query(
+          `INSERT INTO members (group_id, full_name, nickname, contact, address, invited_by, notes, one2one)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [
+            newGroupId,
+            m.fullName,
+            m.nickname,
+            m.contact,
+            m.address,
+            m.invitedBy,
+            m.notes,
+            m.one2one,
+          ]
+        );
+      }
+    }
 
     console.log("🌱 Seeding events and attendance...");
-    // for (const ev of EVENTS) {
-    //   const groupId = groupIdMap.get(ev.groupId);
-    //   const evRes = await client.query(
-    //     `INSERT INTO events (group_id, name, date) VALUES ($1,$2,$3) RETURNING id`,
-    //     [groupId, ev.name, mmddyyyyToIso(ev.date)]
-    //   );
-    //   const newEventId = evRes.rows[0].id;
+    for (const ev of EVENTS) {
+      const groupId = groupIdMap.get(ev.groupId);
+      const evRes = await client.query(
+        `INSERT INTO events (group_id, name, date) VALUES ($1,$2,$3) RETURNING id`,
+        [groupId, ev.name, mmddyyyyToIso(ev.date)]
+      );
+      const newEventId = evRes.rows[0].id;
 
-    //   for (const a of ev.attendance) {
-    //     const memberRes = await client.query(
-    //       `SELECT id FROM members WHERE group_id=$1 AND full_name=$2 LIMIT 1`,
-    //       [groupId, a.name]
-    //     );
+      for (const a of ev.attendance) {
+        const memberRes = await client.query(
+          `SELECT id FROM members WHERE group_id=$1 AND full_name=$2 LIMIT 1`,
+          [groupId, a.name]
+        );
 
-    //     if (memberRes.rowCount > 0) {
-    //       await client.query(
-    //         `INSERT INTO attendance (event_id, member_id, status) VALUES ($1,$2,$3)`,
-    //         [newEventId, memberRes.rows[0].id, a.status]
-    //       );
-    //     } else {
-    //       await client.query(
-    //         `INSERT INTO attendance (event_id, attendee_name, status) VALUES ($1,$2,$3)`,
-    //         [newEventId, a.name, a.status]
-    //       );
-    //     }
-    //   }
-    // }
+        if (memberRes.rowCount > 0) {
+          await client.query(
+            `INSERT INTO attendance (event_id, member_id, status) VALUES ($1,$2,$3)`,
+            [newEventId, memberRes.rows[0].id, a.status]
+          );
+        } else {
+          await client.query(
+            `INSERT INTO attendance (event_id, attendee_name, status) VALUES ($1,$2,$3)`,
+            [newEventId, a.name, a.status]
+          );
+        }
+      }
+    }
 
     await client.query("COMMIT");
     console.log("✅ Database reset and seeded successfully!");
