@@ -1,500 +1,260 @@
-require("dotenv").config(); // load .env
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const pool = require("./db");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
 const PORT = process.env.PORT || 5000;
 
-// ------------------ In-memory data ------------------
-let groups = [];
-// [
-//   {
-//     id: 1,
-//     name: "Jace",
-//     code: "11111",
-//     members: [
-//       {
-//         id: "m-1",
-//         fullName: "Alice",
-//         nickname: "Ali",
-//         contact: "0917-111-1111",
-//         address: "123 Mango St.",
-//         invitedBy: "Jace",
-//         notes: "Prefers morning check-ins.",
-//         one2one: 4,
-//       },
-//       {
-//         id: "m-2",
-//         fullName: "Bob",
-//         nickname: "Bobby",
-//         contact: "0917-222-2222",
-//         address: "45 Pine Ave.",
-//         invitedBy: "Jace",
-//         notes: "",
-//         one2one: 3,
-//       },
-//       {
-//         id: "m-3",
-//         fullName: "Charlie",
-//         nickname: "Char",
-//         contact: "0917-333-3333",
-//         address: "7 Oak Lane",
-//         invitedBy: "Jace",
-//         notes: "Needs follow-up re: schedule.",
-//         one2one: 5,
-//       },
-//     ],
-//   },
-//   {
-//     id: 2,
-//     name: "Josh",
-//     code: "22222",
-//     members: [
-//       {
-//         id: "m-4",
-//         fullName: "David",
-//         nickname: "Dave",
-//         contact: "0917-444-4444",
-//         address: "10 River Rd.",
-//         invitedBy: "Josh",
-//         notes: "",
-//         one2one: 6,
-//       },
-//       {
-//         id: "m-5",
-//         fullName: "Eve",
-//         nickname: "Evie",
-//         contact: "0917-555-5555",
-//         address: "88 Hill St.",
-//         invitedBy: "Josh",
-//         notes: "On vacation next week.",
-//         one2one: 4,
-//       },
-//       {
-//         id: "m-6",
-//         fullName: "Frank",
-//         nickname: "Franky",
-//         contact: "0917-666-6666",
-//         address: "300 Bay Blvd.",
-//         invitedBy: "Josh",
-//         notes: "",
-//         one2one: 2,
-//       },
-//     ],
-//   },
-//   {
-//     id: 3,
-//     name: "Tim",
-//     code: "33333",
-//     members: [
-//       {
-//         id: "m-7",
-//         fullName: "Grace",
-//         nickname: "Grace",
-//         contact: "0917-777-7777",
-//         address: "21 Center St.",
-//         invitedBy: "Tim",
-//         notes: "",
-//         one2one: 5,
-//       },
-//       {
-//         id: "m-8",
-//         fullName: "Heidi",
-//         nickname: "Hei",
-//         contact: "0917-888-8888",
-//         address: "14 Market Rd.",
-//         invitedBy: "Tim",
-//         notes: "",
-//         one2one: 3,
-//       },
-//       {
-//         id: "m-9",
-//         fullName: "Ivan",
-//         nickname: "Ivy",
-//         contact: "0917-999-9999",
-//         address: "5 Lake Ave.",
-//         invitedBy: "Tim",
-//         notes: "",
-//         one2one: 4,
-//       },
-//       {
-//         id: "m-10",
-//         fullName: "Judy",
-//         nickname: "Jude",
-//         contact: "0917-000-0000",
-//         address: "2 Sunset Blvd.",
-//         invitedBy: "Tim",
-//         notes: "",
-//         one2one: 6,
-//       },
-//     ],
-//   },
-//   {
-//     id: 4,
-//     name: "Evan",
-//     code: "44444",
-//     members: [
-//       {
-//         id: "m-11",
-//         fullName: "Karl",
-//         nickname: "K",
-//         contact: "0918-111-1111",
-//         address: "9 Forest Rd.",
-//         invitedBy: "Evan",
-//         notes: "",
-//         one2one: 2,
-//       },
-//       {
-//         id: "m-12",
-//         fullName: "Liam",
-//         nickname: "Lee",
-//         contact: "0918-222-2222",
-//         address: "12 Palm St.",
-//         invitedBy: "Evan",
-//         notes: "",
-//         one2one: 3,
-//       },
-//       {
-//         id: "m-13",
-//         fullName: "Mia",
-//         nickname: "M",
-//         contact: "0918-333-3333",
-//         address: "33 Harbor Ln.",
-//         invitedBy: "Evan",
-//         notes: "Has mobility concerns.",
-//         one2one: 7,
-//       },
-//     ],
-//   },
-//   {
-//     id: 5,
-//     name: "Isaac",
-//     code: "55555",
-//     members: [
-//       {
-//         id: "m-14",
-//         fullName: "Nina",
-//         nickname: "Nin",
-//         contact: "0918-444-4444",
-//         address: "77 Orchard Rd.",
-//         invitedBy: "Isaac",
-//         notes: "",
-//         one2one: 6,
-//       },
-//       {
-//         id: "m-15",
-//         fullName: "Oscar",
-//         nickname: "Oz",
-//         contact: "0918-555-5555",
-//         address: "8 Ridge St.",
-//         invitedBy: "Isaac",
-//         notes: "",
-//         one2one: 5,
-//       },
-//       {
-//         id: "m-16",
-//         fullName: "Paul",
-//         nickname: "Pauly",
-//         contact: "0918-666-6666",
-//         address: "101 Elm St.",
-//         invitedBy: "Isaac",
-//         notes: "",
-//         one2one: 4,
-//       },
-//       {
-//         id: "m-17",
-//         fullName: "Quinn",
-//         nickname: "Q",
-//         contact: "0918-777-7777",
-//         address: "200 Cedar Ln.",
-//         invitedBy: "Isaac",
-//         notes: "",
-//         one2one: 3,
-//       },
-//     ],
-//   },
-//   {
-//     id: 6,
-//     name: "John",
-//     code: "66666",
-//     members: [
-//       {
-//         id: "m-18",
-//         fullName: "New Member",
-//         nickname: "Newbie",
-//         contact: "0918-888-8888",
-//         address: "1 New St.",
-//         invitedBy: "Leader",
-//         notes: "",
-//         one2one: 4,
-//       },
-//       {
-//         id: "m-19",
-//         fullName: "Another Member",
-//         nickname: "Another",
-//         contact: "0918-999-9999",
-//         address: "2 Another St.",
-//         invitedBy: "Leader",
-//         notes: "",
-//         one2one: 5,
-//       },
-//     ],
-//   },
-// ];
-
-let events = [];
-// [
-//   {
-//     id: 1,
-//     groupId: 1,
-//     name: "Alpha Kickoff",
-//     date: "01/15/2025",
-//     attendance: [
-//       { name: "Alice", status: "Present" },
-//       { name: "Bob", status: "Late" },
-//       { name: "Charlie", status: "Absent" },
-//     ],
-//   },
-//   {
-//     id: 2,
-//     groupId: 1,
-//     name: "Alpha Weekly",
-//     date: "03/10/2025",
-//     attendance: [
-//       { name: "Alice", status: "Late" },
-//       { name: "Bob", status: "Present" },
-//       { name: "Charlie", status: "Present" },
-//     ],
-//   },
-//   {
-//     id: 3,
-//     groupId: 2,
-//     name: "Beta Sync",
-//     date: "02/05/2025",
-//     attendance: [
-//       { name: "David", status: "Present" },
-//       { name: "Eve", status: "Absent" },
-//       { name: "Frank", status: "Late" },
-//     ],
-//   },
-//   {
-//     id: 4,
-//     groupId: 2,
-//     name: "Beta Retrospective",
-//     date: "07/20/2025",
-//     attendance: [
-//       { name: "David", status: "Late" },
-//       { name: "Eve", status: "Present" },
-//       { name: "Frank", status: "Present" },
-//     ],
-//   },
-//   {
-//     id: 5,
-//     groupId: 3,
-//     name: "Gamma Planning",
-//     date: "04/12/2025",
-//     attendance: [
-//       { name: "Grace", status: "Present" },
-//       { name: "Heidi", status: "Present" },
-//       { name: "Ivan", status: "Absent" },
-//       { name: "Judy", status: "Late" },
-//     ],
-//   },
-//   {
-//     id: 6,
-//     groupId: 3,
-//     name: "Gamma Review",
-//     date: "09/18/2025",
-//     attendance: [
-//       { name: "Grace", status: "Late" },
-//       { name: "Heidi", status: "Absent" },
-//       { name: "Ivan", status: "Present" },
-//       { name: "Judy", status: "Present" },
-//     ],
-//   },
-//   {
-//     id: 7,
-//     groupId: 4,
-//     name: "Delta Training",
-//     date: "05/09/2025",
-//     attendance: [
-//       { name: "Karl", status: "Absent" },
-//       { name: "Liam", status: "Present" },
-//       { name: "Mia", status: "Present" },
-//     ],
-//   },
-//   {
-//     id: 8,
-//     groupId: 4,
-//     name: "Delta Simulation",
-//     date: "08/14/2025",
-//     attendance: [
-//       { name: "Karl", status: "Present" },
-//       { name: "Liam", status: "Late" },
-//       { name: "Mia", status: "Absent" },
-//     ],
-//   },
-//   {
-//     id: 9,
-//     groupId: 5,
-//     name: "Omega Strategy",
-//     date: "06/25/2025",
-//     attendance: [
-//       { name: "Nina", status: "Late" },
-//       { name: "Oscar", status: "Present" },
-//       { name: "Paul", status: "Present" },
-//       { name: "Quinn", status: "Absent" },
-//     ],
-//   },
-//   {
-//     id: 10,
-//     groupId: 5,
-//     name: "Omega Wrap-up",
-//     date: "11/02/2025",
-//     attendance: [
-//       { name: "Nina", status: "Present" },
-//       { name: "Oscar", status: "Late" },
-//       { name: "Paul", status: "Absent" },
-//       { name: "Quinn", status: "Present" },
-//     ],
-//   },
-//   {
-//     id: 11,
-//     groupId: 6,
-//     name: "New Beginnings",
-//     date: "03/22/2025",
-//     attendance: [
-//       { name: "New Member", status: "Present" },
-//       { name: "Another Member", status: "Late" },
-//     ],
-//   },
-//   {
-//     id: 12,
-//     groupId: 6,
-//     name: "Growth Session",
-//     date: "10/30/2025",
-//     attendance: [
-//       { name: "New Member", status: "Late" },
-//       { name: "Another Member", status: "Present" },
-//     ],
-//   },
-// ];
-
-// ------------------ Groups ------------------
 app.get("/", (req, res) => {
-  res.send("✅ Backend API is running. Try /groups or /events");
+  res.send("✅ Backend API (Postgres) is running");
 });
+
+/* ------------------ GROUPS ------------------ */
 
 // Get all groups
-app.get("/groups", (req, res) => res.json(groups));
-
-// Get single group
-app.get("/groups/:id", (req, res) => {
-  const group = groups.find((g) => g.id === parseInt(req.params.id));
-  group ? res.json(group) : res.status(404).json({ error: "Group not found" });
+app.get("/groups", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM groups ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Create new group
-app.post("/groups", (req, res) => {
-  const newGroup = { id: Date.now(), members: [], ...req.body };
-  groups.push(newGroup);
-  res.status(201).json(newGroup);
+// Get single group
+app.get("/groups/:id", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM groups WHERE id = $1", [
+      req.params.id,
+    ]);
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Group not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create group
+app.post("/groups", async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const result = await pool.query(
+      "INSERT INTO groups (name, description) VALUES ($1, $2) RETURNING *",
+      [name, description]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Update group
-app.put("/groups/:id", (req, res) => {
-  const idx = groups.findIndex((g) => g.id === parseInt(req.params.id));
-  if (idx === -1) return res.status(404).json({ error: "Group not found" });
-
-  groups[idx] = { ...groups[idx], ...req.body };
-  res.json(groups[idx]);
+app.put("/groups/:id", async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const result = await pool.query(
+      "UPDATE groups SET name=$1, description=$2 WHERE id=$3 RETURNING *",
+      [name, description, req.params.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Group not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete group
-app.delete("/groups/:id", (req, res) => {
-  const idx = groups.findIndex((g) => g.id === parseInt(req.params.id));
-  if (idx === -1) return res.status(404).json({ error: "Group not found" });
-
-  const removed = groups.splice(idx, 1);
-  res.json(removed[0]);
+app.delete("/groups/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM groups WHERE id=$1 RETURNING *",
+      [req.params.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Group not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ------------------ Members ------------------
+/* ------------------ MEMBERS ------------------ */
 
-// Add member to a group
-app.post("/groups/:id/members", (req, res) => {
-  const group = groups.find((g) => g.id === parseInt(req.params.id));
-  if (!group) return res.status(404).json({ error: "Group not found" });
-
-  const newMember = { id: `m-${Date.now()}`, ...req.body };
-  group.members.push(newMember);
-  res.status(201).json(newMember);
+// Add member to group
+app.post("/groups/:id/members", async (req, res) => {
+  try {
+    const { nickname, journey } = req.body;
+    const result = await pool.query(
+      "INSERT INTO members (group_id, nickname, journey) VALUES ($1, $2, $3) RETURNING *",
+      [req.params.id, nickname, journey]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Update member
-app.put("/groups/:groupId/members/:memberId", (req, res) => {
-  const group = groups.find((g) => g.id === parseInt(req.params.groupId));
-  if (!group) return res.status(404).json({ error: "Group not found" });
-
-  const idx = group.members.findIndex((m) => m.id === req.params.memberId);
-  if (idx === -1) return res.status(404).json({ error: "Member not found" });
-
-  group.members[idx] = { ...group.members[idx], ...req.body };
-  res.json(group.members[idx]);
+app.put("/groups/:groupId/members/:memberId", async (req, res) => {
+  try {
+    const { nickname, journey } = req.body;
+    const result = await pool.query(
+      "UPDATE members SET nickname=$1, journey=$2 WHERE id=$3 AND group_id=$4 RETURNING *",
+      [nickname, journey, req.params.memberId, req.params.groupId]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Member not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete member
-app.delete("/groups/:groupId/members/:memberId", (req, res) => {
-  const group = groups.find((g) => g.id === parseInt(req.params.groupId));
-  if (!group) return res.status(404).json({ error: "Group not found" });
-
-  const idx = group.members.findIndex((m) => m.id === req.params.memberId);
-  if (idx === -1) return res.status(404).json({ error: "Member not found" });
-
-  const removed = group.members.splice(idx, 1);
-  res.json(removed[0]);
+app.delete("/groups/:groupId/members/:memberId", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM members WHERE id=$1 AND group_id=$2 RETURNING *",
+      [req.params.memberId, req.params.groupId]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Member not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ------------------ Events ------------------
+/* ------------------ EVENTS ------------------ */
 
 // Get all events
-app.get("/events", (req, res) => res.json(events));
-
-// Get single event
-app.get("/events/:id", (req, res) => {
-  const event = events.find((e) => e.id === parseInt(req.params.id));
-  event ? res.json(event) : res.status(404).json({ error: "Event not found" });
+app.get("/events", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM events ORDER BY date DESC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Create event
-app.post("/events", (req, res) => {
-  const newEvent = { id: Date.now(), attendance: [], ...req.body };
-  events.push(newEvent);
-  res.status(201).json(newEvent);
+app.post("/events", async (req, res) => {
+  try {
+    const { name, date } = req.body;
+    const result = await pool.query(
+      "INSERT INTO events (name, date) VALUES ($1, $2) RETURNING *",
+      [name, date]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Update event
-app.put("/events/:id", (req, res) => {
-  const idx = events.findIndex((e) => e.id === parseInt(req.params.id));
-  if (idx === -1) return res.status(404).json({ error: "Event not found" });
-
-  events[idx] = { ...events[idx], ...req.body };
-  res.json(events[idx]);
+app.put("/events/:id", async (req, res) => {
+  try {
+    const { name, date } = req.body;
+    const result = await pool.query(
+      "UPDATE events SET name=$1, date=$2 WHERE id=$3 RETURNING *",
+      [name, date, req.params.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Event not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete event
-app.delete("/events/:id", (req, res) => {
-  const idx = events.findIndex((e) => e.id === parseInt(req.params.id));
-  if (idx === -1) return res.status(404).json({ error: "Event not found" });
-
-  const removed = events.splice(idx, 1);
-  res.json(removed[0]);
+app.delete("/events/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM events WHERE id=$1 RETURNING *",
+      [req.params.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Event not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ------------------ Start ------------------
-app.listen(PORT, () =>
-  console.log(`✅ Server running on http://localhost:${PORT}`)
-);
+/* ------------------ ATTENDANCE ------------------ */
+
+// Get attendance for an event
+app.get("/events/:eventId/attendance", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.status, m.nickname, m.group_id
+       FROM attendance a
+       JOIN members m ON a.member_id = m.id
+       WHERE a.event_id = $1
+       ORDER BY m.nickname ASC`,
+      [req.params.eventId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add/update attendance for a member in an event
+app.post("/events/:eventId/attendance", async (req, res) => {
+  try {
+    const { member_id, status } = req.body;
+
+    // Check if attendance already exists
+    const existing = await pool.query(
+      "SELECT * FROM attendance WHERE event_id=$1 AND member_id=$2",
+      [req.params.eventId, member_id]
+    );
+
+    if (existing.rows.length > 0) {
+      // Update
+      const updated = await pool.query(
+        "UPDATE attendance SET status=$1 WHERE event_id=$2 AND member_id=$3 RETURNING *",
+        [status, req.params.eventId, member_id]
+      );
+      return res.json(updated.rows[0]);
+    } else {
+      // Insert
+      const inserted = await pool.query(
+        "INSERT INTO attendance (event_id, member_id, status) VALUES ($1, $2, $3) RETURNING *",
+        [req.params.eventId, member_id, status]
+      );
+      return res.status(201).json(inserted.rows[0]);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete attendance record
+app.delete("/events/:eventId/attendance/:attendanceId", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM attendance WHERE id=$1 AND event_id=$2 RETURNING *",
+      [req.params.attendanceId, req.params.eventId]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Attendance not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ------------------ START ------------------ */
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+});
