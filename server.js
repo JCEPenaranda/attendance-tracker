@@ -1,14 +1,8 @@
 require("dotenv").config();
-const { Pool } = require("pg");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes("render.com")
-    ? { rejectUnauthorized: false }
-    : false,
-});
+// const pool = require("./db");
 
 const app = express();
 app.use(cors());
